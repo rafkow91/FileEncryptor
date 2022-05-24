@@ -1,4 +1,5 @@
 from argparse import ArgumentParser
+from getpass import getpass
 
 def encryptFile():
     print('File is encrypting')
@@ -38,5 +39,5 @@ args = parser.parse_args()
 
 function = mode[args.mode]
 files = args.file
-function()
-print(files)
+folder_path = args.folder
+password = getpass()
