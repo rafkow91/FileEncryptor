@@ -1,46 +1,60 @@
 from argparse import ArgumentParser
 from cryptography.fernet import Fernet
-from cryptography.hazmat.primitives import hashes
-from cryptography.hazmat.primitives.kdf.pbkdf2 import PBKDF2HMAC
 from getpass import getpass
+from os import walk
+from pathlib import Path
 
 from utils import EncryptFile, DecryptFile, AppendToFile, CodeKey
 
+if __name__ == '__main__':
 
-parser = ArgumentParser()
-mode = {
-    'encrypt': EncryptFile,
-    'decrypt': DecryptFile,
-    'append': AppendToFile,
-}
-parser.add_argument(
-    '-m', '--mode',
-    help='encrypt given file or files | decrypt encrypted file or files | append -> decrypt file, append text and encrypt the file again',
-    choices=mode.keys(),
-    default='encrypt'
-)
+    parser = ArgumentParser(
+        description='App can encrypt and decrypt files \
+            | password is getting on every start app, salt is saved in .env file')
+    mode = {
+        'encrypt': EncryptFile,
+        'decrypt': DecryptFile,
+        'append': AppendToFile,
+    }
+    parser.add_argument(
+        '-m', '--mode',
+        help='encrypt given file or files | decrypt encrypted file or files | append -> decrypt file, append text and encrypt the file again',
+        choices=mode.keys(),
+        default='encrypt'
+    )
 
-parser.add_argument(
-    '-f', '--file',
-    help='file or list of files to processing',
-    nargs='+'
-)
+    group = parser.add_mutually_exclusive_group()
 
-parser.add_argument(
-    '-F', '--folder',
-    help='folder with files to processing',
-)
+    group.add_argument(
+        '-f', '--file',
+        help='file or list of files to processing',
+        nargs='+'
+    )
 
-args = parser.parse_args()
+    group.add_argument(
+        '-d', '--dir',
+        help='path to folder with files to processing',
+    )
 
-function = mode[args.mode]
-files = args.file
-folder_path = args.folder
+    args = parser.parse_args()
 
-password = getpass()
+    function = mode[args.mode]
+    files = args.file
+    folder_path = args.dir
 
-my_key = CodeKey(password)
-fernet = Fernet(my_key)
+    if not files:
+        files = []
+        for path, _, files_in_path in walk(folder_path):
+            try:
+                for file_path in files_in_path:
+                    files.append(f'{path}/{file_path}')
+            except:
+                continue
+            
+    password = getpass()
 
-for i, _ in enumerate(files):
-    function(fernet, files[i])
+    my_key = CodeKey(password)
+    fernet = Fernet(my_key)
+    for file_path in files:
+        path = Path(file_path)
+        function(fernet, path)
