@@ -1,5 +1,5 @@
 from base64 import urlsafe_b64encode
-from posixpath import split
+from os import listdir
 from cryptography.hazmat.primitives import hashes
 from cryptography.hazmat.primitives.kdf.pbkdf2 import PBKDF2HMAC
 from dotenv import dotenv_values
@@ -15,7 +15,8 @@ def EncryptFile(fernet: Fernet, file_path: Path):
             content = input_file.read()
 
         encrypted_file = fernet.encrypt(content.encode('utf-8'))
-
+        if not 'encrypted_files.dokodu' in listdir('./'):
+            open('encrypted_files.dokodu', 'w').close()
         with open('encrypted_files.dokodu', 'r') as encrypted_files:
             lines = encrypted_files.readlines()
 
@@ -31,14 +32,18 @@ def EncryptFile(fernet: Fernet, file_path: Path):
 
 
 def DecryptFile(fernet: Fernet, file_path: Path):
-    with open('encrypted_files.dokodu', 'r') as checklist:
-        path = None
-        for line in checklist:
-            path = Path(line.strip())
-            if file_path.with_suffix('.test') == path.with_suffix('.test'):
-                break
-            else:
-                path = file_path.with_suffix('.txt')
+    
+    if 'encrypted_files.dokodu' in listdir('./'):
+        with open('encrypted_files.dokodu', 'r') as checklist:
+            path = None
+            for line in checklist:
+                path = Path(line.strip())
+                if file_path.with_suffix('.test') == path.with_suffix('.test'):
+                    break
+                else:
+                    path = file_path.with_suffix('.txt')
+    else:
+        path = file_path.with_suffix('.txt')
 
     with open(file_path, 'r') as input_file:
         content = input_file.read()
@@ -49,8 +54,9 @@ def DecryptFile(fernet: Fernet, file_path: Path):
         result.write(decrypted_file.decode('utf-8'))
 
 
-def AppendToFile(fernet: Fernet):
+def AppendToFile(fernet: Fernet, file_path: Path):
     print('File is encrypting')
+
     print('File is decrypting')
 
 
