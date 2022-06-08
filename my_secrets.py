@@ -5,7 +5,7 @@ from getpass import getpass
 from os import walk
 from pathlib import Path
 
-from utils import Encryption, Decryption
+from utils import Encryption, Decryption, Addition
 
 if __name__ == '__main__':
 
@@ -15,7 +15,7 @@ if __name__ == '__main__':
     mode = {
         'encrypt': Encryption,
         'decrypt': Decryption,
-        'append': print,
+        'append': Addition,
     }
     parser.add_argument(
         '-m', '--mode',
@@ -52,7 +52,7 @@ if __name__ == '__main__':
             for file_path in files_in_path:
                 files.append(f'{path}/{file_path}')
 
+    action = function(password)
     for file_path in files:
         path = Path(file_path)
-        action = function(password)
         action.execute(path)

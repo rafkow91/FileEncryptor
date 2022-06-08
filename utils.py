@@ -55,11 +55,10 @@ class Encryption(_CommonThings):
     def __init__(self, password: str) -> None:
         super().__init__(password)
 
-    def execute(self, path: Path) -> None:
-        self.path = path
-        if self.path.suffix != '.dokodu':
+    def execute(self, path: Path) -> Path:
+        if path.suffix != '.dokodu':
             try:
-                with open(self.path, 'r', encoding='utf-8') as input_file:
+                with open(path, 'r', encoding='utf-8') as input_file:
                     content = input_file.read()
             except FileNotFoundError:
                 print('This file don\'t exist! You input wrong path')
@@ -69,61 +68,62 @@ class Encryption(_CommonThings):
             while True:
                 try:
                     with open('encrypted_files.dokodu', 'r', encoding='utf-8') as encrypted_files:
-                        self.lines = encrypted_files.readlines()
+                        lines = encrypted_files.readlines()
                         break
                 except FileNotFoundError:
                     if not 'encrypted_files.dokodu' in listdir('./'):
                         open('encrypted_files.dokodu', 'w', encoding='utf-8').close()
 
             try:
-                for i, line in enumerate(self.lines):
-                    self.lines[i] = Path(line.strip())
+                for i, line in enumerate(lines):
+                    lines[i] = Path(line.strip())
             except UnboundLocalError:
-                self.lines = []
+                lines = []
 
-            if self.path not in self.lines:
+            if path not in lines:
                 with open('encrypted_files.dokodu', 'a', encoding='utf-8') as encrypted_files:
-                    encrypted_files.write(f'{self.path}\n')
+                    encrypted_files.write(f'{path}\n')
 
-            with open(self.path.rename(self.path.with_suffix('.dokodu')), 'w', encoding='utf-8') as result:
+            with open(path.rename(path.with_suffix('.dokodu')), 'w', encoding='utf-8') as result:
                 result.write(encrypted_file.decode('utf-8'))
 
             print(f'File {path} is encrypted')
         else:
             print('This file is not correct suffix - can\'t encrypt file *.dokodu')
 
+        return path.with_suffix('.dokodu')
+
 
 class Decryption(_CommonThings):
     def __init__(self, password: str) -> None:
         super().__init__(password)
 
-    def execute(self, path: Path) -> None:
-        self.path = path
+    def execute(self, path: Path) -> Path:
         try:
             with open('encrypted_files.dokodu', 'r', encoding='utf-8') as checklist:
                 for line in checklist:
                     new_path = Path(line.strip())
-                    if self.path.with_suffix('.test') == new_path.with_suffix('.test'):
+                    if path.with_suffix('.test') == new_path.with_suffix('.test'):
                         new_path = Path(line.strip())
                         break
                     else:
-                        new_path = self.path.with_suffix('.txt')
+                        new_path = path.with_suffix('.txt')
 
         except FileNotFoundError:
-            new_path = self.path.with_suffix('.txt')
+            new_path = path.with_suffix('.txt')
 
         try:
             type(new_path)
         except UnboundLocalError:
-            new_path = self.path.with_suffix('.txt')
+            new_path = path.with_suffix('.txt')
 
         try:
-            with open(self.path, 'r') as input_file:
+            with open(path, 'r') as input_file:
                 content = input_file.read()
 
             decrypted_file = self.fernet.decrypt(content.encode('utf-8'))
 
-            with open(self.path.rename(new_path), 'w') as result:
+            with open(path.rename(new_path), 'w') as result:
                 result.write(decrypted_file.decode('utf-8'))
 
             print(f'File {path} is decrypted')
@@ -133,8 +133,31 @@ class Decryption(_CommonThings):
         except InvalidToken:
             print('This file can\'t be decrypted! You input wrong password')
 
+        return new_path
 
-# def AppendToFile(fernet: Fernet, self.path: Path):
-#     print('File is encrypting')
 
-#     print('File is decrypting')
+class Addition(_CommonThings):
+    def __init__(self, password: str) -> None:
+        self.password = password
+
+    def execute(self, path: Path) -> Path:
+        action = Decryption(self.password)
+        path = action.execute(path)
+
+        
+        print('What do you add to file? \n// Press \'enter\' to end input //')
+        new_line = input()
+        to_append = [new_line + '\n']
+        while True:
+            new_line = input()
+            if new_line == "":
+                break
+            to_append.append(new_line + '\n')
+
+        with open(path, 'a') as content:
+            content.writelines(to_append)
+
+        action = Encryption(self.password)
+        path = action.execute(path)
+
+        return path
